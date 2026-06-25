@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Planificador de dieta offline para musculación. Calcula macros con Mifflin-St Jeor y genera platos reales adaptados a tu objetivo, presupuesto y tiempo de cocina.">
+  <title>AI Bodybuilding Nutrition Planner</title>
+  <link rel="icon" type="image/svg+xml" href="assets/img/icon.svg">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <div class="container">
+
+    <section class="hero">
+      <h1>AI Bodybuilding Nutrition Planner <span style="color:var(--accent);font-size:0.6em">Chef Mode</span></h1>
+      <p>
+        Generador de dieta para musculación completamente offline. Calcula macros con Mifflin-St Jeor, construye platos reales
+        (no listas de ingredientes), garantiza ≥3 fuentes de proteína y ≥3 de carbohidratos al día, y asegura que ningún
+        alimento supere el 25% de las calorías totales.
+      </p>
+    </section>
+
+    <div class="grid">
+
+      <!-- ══ PANEL IZQUIERDO: formulario ══ -->
+      <section class="panel">
+        <h2>Datos del usuario</h2>
+
+        <form id="plannerForm">
+          <div class="form-grid">
+
+            <div class="field">
+              <label for="age">Edad</label>
+              <input id="age" type="number" min="14" max="90" value="28" required>
+            </div>
+
+            <div class="field">
+              <label for="sex">Sexo</label>
+              <select id="sex" required>
+                <option value="male">Hombre</option>
+                <option value="female">Mujer</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="weight">Peso (kg)</label>
+              <input id="weight" type="number" min="35" max="250" step="0.1" value="78" required>
+            </div>
+
+            <div class="field">
+              <label for="height">Altura (cm)</label>
+              <input id="height" type="number" min="130" max="230" value="178" required>
+            </div>
+
+            <div class="field">
+              <label for="activity">Nivel de actividad</label>
+              <select id="activity" required>
+                <option value="1.2">Sedentario</option>
+                <option value="1.375">Ligero</option>
+                <option value="1.55" selected>Moderado</option>
+                <option value="1.725">Alto</option>
+                <option value="1.9">Muy alto</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="workouts">Entrenamientos / semana</label>
+              <input id="workouts" type="number" min="0" max="14" value="4" required>
+            </div>
+
+            <div class="field">
+              <label for="goal">Objetivo</label>
+              <select id="goal" required>
+                <option value="bulk">Volumen</option>
+                <option value="cut">Definición</option>
+                <option value="recomp">Recomposición</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="budget">Presupuesto diario (€)</label>
+              <input id="budget" type="number" min="2" max="100" step="0.1" value="9" required>
+            </div>
+
+            <div class="field">
+              <label for="cookTime">Tiempo para cocinar</label>
+              <select id="cookTime" required>
+                <option value="10">Muy poco (&lt;= 10 min)</option>
+                <option value="20" selected>Poco (&lt;= 20 min)</option>
+                <option value="35">Normal (&lt;= 35 min)</option>
+                <option value="60">Amplio (&lt;= 60 min)</option>
+              </select>
+            </div>
+
+            <div class="field full">
+              <label for="taste">Preferencia de comida</label>
+              <select id="taste" required>
+                <option value="mixed" selected>Mixto</option>
+                <option value="sweet">Dulce</option>
+                <option value="savory">Salado</option>
+              </select>
+            </div>
+
+          </div>
+
+          <div class="actions">
+            <button type="submit" class="btn-primary">Generar plan</button>
+            <button type="button" class="btn-secondary" id="fillExampleBtn">Ejemplo alto en proteína</button>
+            <button type="button" class="btn-secondary" id="resetBtn">Resetear</button>
+          </div>
+
+          <div class="spinner-wrap" id="spinnerWrap">
+            <div class="spinner"></div>
+            <div>Analizando macros, coste, tiempo y alimentos más eficientes...</div>
+          </div>
+
+          <div class="status" id="statusText"></div>
+
+          <div class="meta-boxes">
+            <div class="meta">
+              <div class="k">Motor</div>
+              <div class="v">Offline</div>
+            </div>
+            <div class="meta">
+              <div class="k">Base de platos</div>
+              <div class="v" id="foodCount">0</div>
+            </div>
+            <div class="meta">
+              <div class="k">Dependencias</div>
+              <div class="v">0</div>
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <!-- ══ PANEL DERECHO: resultados ══ -->
+      <section class="panel">
+        <div class="output-top">
+          <h2 style="margin:0;">Plan nutricional generado</h2>
+          <div class="badge">🍳 Chef Mode · 100% Offline</div>
+        </div>
+
+        <div class="summary-grid" id="summaryGrid">
+          <div class="summary-card">
+            <h3>Calorías objetivo</h3>
+            <div class="big" id="sumCalories">-</div>
+            <div class="sub" id="sumCaloriesSub">Esperando cálculo</div>
+          </div>
+          <div class="summary-card">
+            <h3>Proteínas</h3>
+            <div class="big" id="sumProtein">-</div>
+            <div class="sub" id="sumProteinSub">Esperando cálculo</div>
+          </div>
+          <div class="summary-card">
+            <h3>Carbohidratos</h3>
+            <div class="big" id="sumCarbs">-</div>
+            <div class="sub" id="sumCarbsSub">Esperando cálculo</div>
+          </div>
+          <div class="summary-card">
+            <h3>Grasas</h3>
+            <div class="big" id="sumFats">-</div>
+            <div class="sub" id="sumFatsSub">Esperando cálculo</div>
+          </div>
+        </div>
+
+        <div class="warning" id="warningBox"></div>
+
+        <div class="meals-grid" id="mealsContainer">
+          <div class="meal-card">
+            <div class="meal-head">
+              <h3>Sin plan todavía</h3>
+              <div class="meal-kcal">0 kcal</div>
+            </div>
+            <div class="meal-body">
+              Introduce tus datos y pulsa <strong>Generar plan</strong>.
+            </div>
+          </div>
+        </div>
+
+        <div class="insights" id="insightsBox">
+          <h3>Notas del plan</h3>
+          <ul id="insightsList">
+            <li>Motor: platos reales de DISH_DB (204 platos, 14 fuentes proteicas).</li>
+            <li>Garantiza ≥3 fuentes de proteína y ≥3 de carbohidratos al día.</li>
+            <li>Ningún alimento puede superar el 25% de las calorías diarias.</li>
+            <li>Sin dependencias externas — 100% offline.</li>
+          </ul>
+        </div>
+
+        <div class="footer-note">
+          Esta herramienta ofrece una planificación práctica orientada al fitness.
+          Si necesitas asesoramiento médico o nutricional personalizado, consulta con un profesional.
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Scripts — orden obligatorio, cada archivo depende de los anteriores -->
+  <script src="js/data/dishes.js"></script>
+  <script src="js/core/utils.js"></script>
+  <script src="js/core/calculator.js"></script>
+  <script src="js/core/meal-helpers.js"></script>
+  <script src="js/engine/dish-selector.js"></script>
+  <script src="js/engine/plan-generator.js"></script>
+  <script src="js/ui/render.js"></script>
+  <script src="js/ui/render-insights.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
